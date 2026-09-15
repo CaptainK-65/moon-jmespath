@@ -6,9 +6,15 @@ import {
 }
 
 // Values
+pub fn catalog_items_to_json(ArrayView[CatalogItem]) -> Json
+
 pub fn compile(String, limits? : Limits) -> Expression raise JmesError
 
+pub fn compile_pipeline(ArrayView[String], limits? : Limits) -> Pipeline raise JmesError
+
 pub fn search(String, Json, limits? : Limits) -> Json raise JmesError
+
+pub fn search_ndjson(String, String, limits? : Limits, options? : NdjsonOptions) -> NdjsonReport raise JmesError
 
 // Errors
 pub(all) suberror JmesError {
@@ -20,12 +26,48 @@ pub fn JmesError::message(Self) -> String
 pub fn JmesError::offset(Self) -> Int
 
 // Types and methods
+pub(all) struct AnalysisFinding {
+  code : String
+  severity : AnalysisSeverity
+  message : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct AnalysisOptions {
+  node_warning_threshold : Int
+  depth_warning_threshold : Int
+  projection_warning_threshold : Int
+} derive(Eq, @debug.Debug)
+pub fn AnalysisOptions::default() -> Self
+
+pub(all) enum AnalysisSeverity {
+  Information
+  Warning
+} derive(Eq, @debug.Debug)
+
 type Ast derive(Eq, @debug.Debug)
 
 pub(all) enum BatchItem {
   Value(Json)
   Failure(Int, Diagnostic)
 } derive(Eq, @debug.Debug)
+
+pub(all) struct CatalogEntry {
+  name : String
+  source : String
+  stats : PlanStats
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CatalogItem {
+  Value(String, Json)
+  Failure(String, Diagnostic)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CatalogStats {
+  entries : Int
+  total_nodes : Int
+  total_projections : Int
+  total_functions : Int
+} derive(Eq, ToJson, @debug.Debug)
 
 type CompareOp derive(Eq, @debug.Debug)
 
@@ -42,10 +84,13 @@ pub struct Engine {
 }
 pub fn Engine::clear_cache(Self) -> Unit
 pub fn Engine::compile(Self, String) -> Expression raise JmesError
+pub fn Engine::compile_pipeline(Self, ArrayView[String]) -> Pipeline raise JmesError
 pub fn Engine::new(limits? : Limits, cache_capacity? : Int) -> Self raise JmesError
 pub fn Engine::register_function(Self, String, Int, Int?, (ArrayView[Json]) -> Json raise JmesError) -> Unit raise JmesError
 pub fn Engine::search(Self, String, Json) -> Json raise JmesError
 pub fn Engine::search_batch(Self, String, ArrayView[Json]) -> Array[BatchItem] raise JmesError
+pub fn Engine::search_ndjson(Self, String, String, options? : NdjsonOptions) -> NdjsonReport raise JmesError
+pub fn Engine::search_pipeline(Self, Pipeline, Json) -> PipelineReport raise JmesError
 pub fn Engine::stats(Self) -> EngineStats
 pub fn Engine::trace(Self, String, Json, options? : TraceOptions) -> TraceReport raise JmesError
 pub fn Engine::unregister_function(Self, String) -> Unit
@@ -69,11 +114,23 @@ pub(all) enum ErrorKind {
 pub struct Expression {
   // private fields
 }
+pub fn Expression::analyze(Self, options? : AnalysisOptions) -> ExpressionAnalysis
 pub fn Expression::ast_json(Self) -> Json
 pub fn Expression::explain(Self) -> QueryPlan
 pub fn Expression::search(Self, Json) -> Json raise JmesError
 pub fn Expression::source(Self) -> String
 pub fn Expression::trace(Self, Json, options? : TraceOptions) -> TraceReport raise JmesError
+
+pub(all) struct ExpressionAnalysis {
+  source : String
+  stats : PlanStats
+  fields : Array[String]
+  functions : Array[String]
+  findings : Array[AnalysisFinding]
+  uses_filters : Bool
+  uses_expression_references : Bool
+} derive(Eq, @debug.Debug)
+pub fn ExpressionAnalysis::to_json(Self) -> Json
 
 pub(all) struct Limits {
   max_expression_length : Int
@@ -83,6 +140,62 @@ pub(all) struct Limits {
 } derive(Eq, @debug.Debug)
 pub fn Limits::default() -> Self
 
+pub(all) struct NdjsonFailure {
+  line : Int
+  stage : String
+  message : String
+  diagnostic : Json
+} derive(Eq, @debug.Debug)
+
+pub(all) enum NdjsonItem {
+  Record(NdjsonRecord)
+  Rejected(NdjsonFailure)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct NdjsonOptions {
+  skip_blank_lines : Bool
+  continue_on_error : Bool
+  include_input : Bool
+} derive(Eq, @debug.Debug)
+pub fn NdjsonOptions::default() -> Self
+
+pub(all) struct NdjsonRecord {
+  line : Int
+  input : Json?
+  output : Json
+} derive(Eq, @debug.Debug)
+
+pub(all) struct NdjsonReport {
+  items : Array[NdjsonItem]
+  processed : Int
+  succeeded : Int
+  failed : Int
+  stopped_early : Bool
+} derive(Eq, @debug.Debug)
+pub fn NdjsonReport::to_json(Self) -> Json
+
+pub struct Pipeline {
+  // private fields
+}
+pub fn Pipeline::explain(Self) -> Array[QueryPlan]
+pub fn Pipeline::search(Self, Json) -> PipelineReport raise JmesError
+pub fn Pipeline::sources(Self) -> Array[String]
+pub fn Pipeline::stats(Self) -> PipelineStats
+
+pub(all) struct PipelineReport {
+  result : Json
+  intermediate : Array[Json]
+} derive(Eq, @debug.Debug)
+pub fn PipelineReport::to_json(Self) -> Json
+
+pub(all) struct PipelineStats {
+  stages : Int
+  total_nodes : Int
+  max_stage_depth : Int
+  projections : Int
+  functions : Int
+} derive(Eq, ToJson, @debug.Debug)
+
 pub(all) struct PlanStats {
   nodes : Int
   max_depth : Int
@@ -90,6 +203,19 @@ pub(all) struct PlanStats {
   functions : Int
   fields : Int
 } derive(Eq, ToJson, @debug.Debug)
+
+pub struct QueryCatalog {
+  // private fields
+}
+pub fn QueryCatalog::contains(Self, String) -> Bool
+pub fn QueryCatalog::default() -> Self raise JmesError
+pub fn QueryCatalog::entries(Self) -> Array[CatalogEntry]
+pub fn QueryCatalog::new(Engine) -> Self
+pub fn QueryCatalog::register(Self, String, String) -> Unit raise JmesError
+pub fn QueryCatalog::remove(Self, String) -> Unit
+pub fn QueryCatalog::search(Self, String, Json) -> Json raise JmesError
+pub fn QueryCatalog::search_all(Self, Json) -> Array[CatalogItem]
+pub fn QueryCatalog::stats(Self) -> CatalogStats
 
 pub(all) struct QueryPlan {
   source : String
