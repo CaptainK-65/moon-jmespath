@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Explore JMESPath queries with MoonJMES, a reusable MoonBit JSON query engine." />
+    <meta name="theme-color" content="#07111f" />
+    <title>MoonJMES Playground</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="https://github.com/CaptainK-65/moon-jmespath" aria-label="MoonJMES repository">
+        <span class="brand-mark" aria-hidden="true">M</span>
+        <span>
+          <strong>MoonJMES</strong>
+          <small>JMESPath for MoonBit</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span id="runtime-status" class="runtime-status waiting"><span></span>Loading MoonBit runtime</span>
+        <a class="ghost-link" href="https://github.com/CaptainK-65/moon-jmespath">View source ↗</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">MoonBit · JMESPath 1.0 · Four backends</p>
+        <h1>See what your JSON query <em>really</em> does.</h1>
+        <p class="hero-copy">Run standards-compliant expressions, inspect the compiled plan, and follow every evaluation step—all in your browser.</p>
+        <div class="proof-strip" aria-label="Project evidence">
+          <span><strong>908</strong> compliance cases</span>
+          <span><strong>0</strong> allowlisted failures</span>
+          <span><strong>500</strong> bounded trace events</span>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="JMESPath query workspace">
+        <div class="editor-panel panel">
+          <div class="panel-heading">
+            <div>
+              <span class="step-label">01 · Input</span>
+              <h2>Shape the data</h2>
+            </div>
+            <div class="example-picker">
+              <label for="example-select">Example</label>
+              <select id="example-select"></select>
+            </div>
+          </div>
+
+          <label class="field-label" for="query-input">JMESPath expression</label>
+          <div class="query-row">
+            <input id="query-input" type="text" spellcheck="false" autocomplete="off" aria-describedby="query-help" />
+            <button id="run-button" class="run-button" type="button">
+              <span>Run query</span><kbd>Ctrl ↵</kbd>
+            </button>
+          </div>
+          <p id="query-help" class="field-help">Try filters, projections, pipes, slices, or any standard JMESPath function.</p>
+
+          <div class="json-heading">
+            <label class="field-label" for="json-input">JSON input</label>
+            <span id="input-meta">0 lines</span>
+          </div>
+          <textarea id="json-input" spellcheck="false" aria-label="JSON input"></textarea>
+        </div>
+
+        <div class="result-panel panel">
+          <div class="panel-heading">
+            <div>
+              <span class="step-label">02 · Output</span>
+              <h2>Read the result</h2>
+            </div>
+            <button id="copy-button" class="icon-button" type="button" disabled>Copy JSON</button>
+          </div>
+
+          <div id="empty-state" class="empty-state">
+            <div class="empty-orbit" aria-hidden="true"><span></span></div>
+            <h3>Ready when you are</h3>
+            <p>Run an expression to reveal its result, plan, and execution trace.</p>
+          </div>
+
+          <div id="error-state" class="error-state hidden" role="alert">
+            <span class="error-kicker">Query diagnostic</span>
+            <h3 id="error-title">Unable to run expression</h3>
+            <p id="error-message"></p>
+            <div id="error-location" class="error-location hidden">
+              <code id="error-excerpt"></code>
+              <span id="error-caret"></span>
+            </div>
+          </div>
+
+          <div id="success-state" class="success-state hidden">
+            <div class="result-meta">
+              <span class="success-pill">Success</span>
+              <span id="result-type"></span>
+              <span id="result-size"></span>
+            </div>
+            <pre id="result-output" tabindex="0"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="inspector" class="inspector panel hidden" aria-label="Query inspector">
+        <div class="inspector-header">
+          <div>
+            <span class="step-label">03 · Inspect</span>
+            <h2>Understand the execution</h2>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Inspector view">
+            <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="plan">Query plan</button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-tab="trace">Trace timeline</button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-tab="ast">AST JSON</button>
+          </div>
+        </div>
+
+        <div id="tab-plan" class="tab-content active" role="tabpanel">
+          <div id="stat-grid" class="stat-grid"></div>
+          <div class="plan-layout">
+            <div>
+              <h3>Operator tree</h3>
+              <p>Private AST nodes rendered through MoonJMES’s stable inspection contract.</p>
+            </div>
+            <div id="plan-tree" class="plan-tree"></div>
+          </div>
+        </div>
+
+        <div id="tab-trace" class="tab-content" role="tabpanel">
+          <div class="trace-summary">
+            <p id="trace-summary"></p>
+            <span id="trace-truncated" class="warning-pill hidden">Trace truncated</span>
+          </div>
+          <div id="trace-list" class="trace-list"></div>
+        </div>
+
+        <div id="tab-ast" class="tab-content" role="tabpanel">
+          <pre id="ast-output" tabindex="0"></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Built with MoonBit. Query semantics are verified against the upstream JMESPath corpus.</p>
+      <div><a href="https://jmespath.org/specification.html">JMESPath specification</a><a href="https://github.com/CaptainK-65/moon-jmespath">Apache-2.0 source</a></div>
+    </footer>
+
+    <script src="./moon-jmes.js"></script>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>

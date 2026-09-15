@@ -1,5 +1,6 @@
 /_build/
 /tools/_build/
+/playground/dist/
 /.moon/
 /.mooncakes/
 *.wasm

@@ -1,0 +1,31 @@
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/x/fs",
+}
+
+///|
+fn copy_text(source : String, destination : String) -> Unit raise {
+  @fs.write_string_to_file(destination, @fs.read_file_to_string(source))
+}
+
+///|
+fn main raise {
+  let args = @env.args()
+  if args.length() != 3 {
+    println(
+      "usage: moon run tools/assemble_playground.mbtx <compiled-app.js> <output-dir>",
+    )
+    return
+  }
+  let compiled_app = args[1]
+  let output_dir = args[2]
+  if !@fs.path_exists(output_dir) {
+    @fs.create_dir(output_dir)
+  }
+  copy_text("playground/site/index.html", output_dir + "/index.html")
+  copy_text("playground/site/styles.css", output_dir + "/styles.css")
+  copy_text("playground/site/app.mjs", output_dir + "/app.mjs")
+  copy_text(compiled_app, output_dir + "/moon-jmes.js")
+  @fs.write_string_to_file(output_dir + "/.nojekyll", "")
+  println("assembled MoonJMES Playground at \{output_dir}")
+}
