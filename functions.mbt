@@ -84,7 +84,7 @@ fn json_type(value : Json) -> String {
 fn json_order(left : Json, right : Json) -> Int {
   match (left, right) {
     (Json::Number(a, ..), Json::Number(b, ..)) => a.compare(b)
-    (Json::String(a), Json::String(b)) => a.compare(b)
+    (Json::String(a), Json::String(b)) => a.lexical_compare(b)
     _ => 0
   }
 }

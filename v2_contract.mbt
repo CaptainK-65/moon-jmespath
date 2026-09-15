@@ -119,3 +119,170 @@ declare pub fn Engine::trace(
 
 ///|
 declare pub fn TraceReport::to_json(self : TraceReport) -> Json
+
+///|
+/// Formal v0.2 static-analysis contracts. Implementation lives in analysis.mbt.
+declare pub type AnalysisSeverity
+
+///|
+declare pub type AnalysisFinding
+
+///|
+declare pub type AnalysisOptions
+
+///|
+declare pub type ExpressionAnalysis
+
+///|
+declare pub fn AnalysisOptions::default() -> AnalysisOptions
+
+///|
+declare pub fn Expression::analyze(
+  self : Expression,
+  options? : AnalysisOptions,
+) -> ExpressionAnalysis
+
+///|
+declare pub fn ExpressionAnalysis::to_json(self : ExpressionAnalysis) -> Json
+
+///|
+/// Formal v0.2 pipeline contracts. Implementation lives in pipeline.mbt.
+declare pub type Pipeline
+
+///|
+declare pub type PipelineStats
+
+///|
+declare pub type PipelineReport
+
+///|
+declare pub fn compile_pipeline(
+  sources : ArrayView[String],
+  limits? : Limits,
+) -> Pipeline raise JmesError
+
+///|
+declare pub fn Engine::compile_pipeline(
+  self : Engine,
+  sources : ArrayView[String],
+) -> Pipeline raise JmesError
+
+///|
+declare pub fn Pipeline::search(
+  self : Pipeline,
+  input : Json,
+) -> PipelineReport raise JmesError
+
+///|
+declare pub fn Engine::search_pipeline(
+  self : Engine,
+  pipeline : Pipeline,
+  input : Json,
+) -> PipelineReport raise JmesError
+
+///|
+declare pub fn Pipeline::sources(self : Pipeline) -> Array[String]
+
+///|
+declare pub fn Pipeline::stats(self : Pipeline) -> PipelineStats
+
+///|
+declare pub fn Pipeline::explain(self : Pipeline) -> Array[QueryPlan]
+
+///|
+declare pub fn PipelineReport::to_json(self : PipelineReport) -> Json
+
+///|
+/// Formal v0.2 NDJSON contracts. Implementation lives in ndjson.mbt.
+declare pub type NdjsonOptions
+
+///|
+declare pub type NdjsonRecord
+
+///|
+declare pub type NdjsonFailure
+
+///|
+declare pub type NdjsonItem
+
+///|
+declare pub type NdjsonReport
+
+///|
+declare pub fn NdjsonOptions::default() -> NdjsonOptions
+
+///|
+declare pub fn search_ndjson(
+  source : String,
+  document : String,
+  limits? : Limits,
+  options? : NdjsonOptions,
+) -> NdjsonReport raise JmesError
+
+///|
+declare pub fn Engine::search_ndjson(
+  self : Engine,
+  source : String,
+  document : String,
+  options? : NdjsonOptions,
+) -> NdjsonReport raise JmesError
+
+///|
+declare pub fn NdjsonReport::to_json(self : NdjsonReport) -> Json
+
+///|
+/// Formal v0.2 query-catalog contracts. Implementation lives in catalog.mbt.
+declare pub type CatalogEntry
+
+///|
+declare pub type CatalogItem
+
+///|
+declare pub type CatalogStats
+
+///|
+declare pub type QueryCatalog
+
+///|
+declare pub fn QueryCatalog::new(engine : Engine) -> QueryCatalog
+
+///|
+declare pub fn QueryCatalog::default() -> QueryCatalog raise JmesError
+
+///|
+declare pub fn QueryCatalog::register(
+  self : QueryCatalog,
+  name : String,
+  source : String,
+) -> Unit raise JmesError
+
+///|
+declare pub fn QueryCatalog::remove(self : QueryCatalog, name : String) -> Unit
+
+///|
+declare pub fn QueryCatalog::contains(
+  self : QueryCatalog,
+  name : String,
+) -> Bool
+
+///|
+declare pub fn QueryCatalog::entries(self : QueryCatalog) -> Array[CatalogEntry]
+
+///|
+declare pub fn QueryCatalog::search(
+  self : QueryCatalog,
+  name : String,
+  input : Json,
+) -> Json raise JmesError
+
+///|
+declare pub fn QueryCatalog::search_all(
+  self : QueryCatalog,
+  input : Json,
+) -> Array[CatalogItem]
+
+///|
+declare pub fn QueryCatalog::stats(self : QueryCatalog) -> CatalogStats
+
+///|
+declare pub fn catalog_items_to_json(items : ArrayView[CatalogItem]) -> Json
