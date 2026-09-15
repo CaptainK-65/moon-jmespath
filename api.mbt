@@ -18,6 +18,15 @@ pub(all) struct JmesError {
 } derive(Debug, Eq)
 
 ///|
+fn JmesError::new(
+  kind : ErrorKind,
+  message : String,
+  offset : Int,
+) -> JmesError {
+  { kind, message, offset, }
+}
+
+///|
 /// Resource limits applied while compiling and evaluating an expression.
 pub(all) struct Limits {
   max_expression_length : Int
