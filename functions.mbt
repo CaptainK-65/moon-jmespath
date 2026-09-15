@@ -221,6 +221,15 @@ fn evaluate_function(
   context : EvalContext,
   depth : Int,
 ) -> Json raise JmesError {
+  match context.custom_functions.get(name) {
+    Some(custom) => {
+      let maximum = custom.maximum_arity.unwrap_or(2147483647)
+      require_arity(name, arguments, custom.minimum_arity, maximum)
+      let values = evaluate_arguments(arguments, input, context, depth)
+      return (custom.handler)(values[:])
+    }
+    None => ()
+  }
   if name == "map" {
     return evaluate_map_function(name, arguments, input, context, depth)
   }

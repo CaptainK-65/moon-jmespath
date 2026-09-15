@@ -22,6 +22,11 @@ pub fn JmesError::offset(Self) -> Int
 // Types and methods
 type Ast derive(Eq, @debug.Debug)
 
+pub(all) enum BatchItem {
+  Value(Json)
+  Failure(Int, Diagnostic)
+} derive(Eq, @debug.Debug)
+
 type CompareOp derive(Eq, @debug.Debug)
 
 pub(all) struct Diagnostic {
@@ -31,6 +36,25 @@ pub(all) struct Diagnostic {
   excerpt : String
 } derive(Eq, @debug.Debug)
 pub fn Diagnostic::to_json(Self) -> Json
+
+pub struct Engine {
+  // private fields
+}
+pub fn Engine::clear_cache(Self) -> Unit
+pub fn Engine::compile(Self, String) -> Expression raise JmesError
+pub fn Engine::new(limits? : Limits, cache_capacity? : Int) -> Self raise JmesError
+pub fn Engine::register_function(Self, String, Int, Int?, (ArrayView[Json]) -> Json raise JmesError) -> Unit raise JmesError
+pub fn Engine::search(Self, String, Json) -> Json raise JmesError
+pub fn Engine::search_batch(Self, String, ArrayView[Json]) -> Array[BatchItem] raise JmesError
+pub fn Engine::stats(Self) -> EngineStats
+pub fn Engine::unregister_function(Self, String) -> Unit
+
+pub(all) struct EngineStats {
+  cache_entries : Int
+  cache_hits : Int
+  cache_misses : Int
+  custom_functions : Int
+} derive(Eq, @debug.Debug)
 
 pub(all) enum ErrorKind {
   Syntax
