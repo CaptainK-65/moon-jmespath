@@ -1,0 +1,11 @@
+import {
+  "CaptainK-65/jmespath/playground/model",
+}
+
+pkgtype(kind: "executable")
+
+warnings = "-29"
+
+options(
+  targets: { "main_js.mbt": [ "js" ], "main_stub.mbt": [ "not", "js" ] },
+)
