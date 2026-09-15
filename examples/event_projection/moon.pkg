@@ -1,0 +1,6 @@
+import {
+  "CaptainK-65/jmespath",
+  "moonbitlang/core/json",
+}
+
+pkgtype(kind: "executable")
