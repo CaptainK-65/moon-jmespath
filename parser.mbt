@@ -165,10 +165,26 @@ fn Parser::attach_projection(
 ) -> Ast raise JmesError {
   match base {
     Projection(source, transform) =>
-      self.add_node(
-        Projection(source, self.add_node(Sequence(transform, suffix))),
-      )
+      Projection(source, self.attach_projection(transform, suffix))
+    Sequence(left, right) =>
+      Sequence(left, self.attach_projection(right, suffix))
     _ => self.add_node(Sequence(base, suffix))
+  }
+}
+
+///|
+fn Parser::star_closes_bracket(self : Parser) -> Bool {
+  self.current().kind is Star &&
+  self.index + 1 < self.tokens.length() &&
+  self.tokens[self.index + 1].kind is RBracket
+}
+
+///|
+fn Ast::has_projection(self : Ast) -> Bool {
+  match self {
+    Projection(_, _) => true
+    Sequence(left, right) => left.has_projection() || right.has_projection()
+    _ => false
   }
 }
 
@@ -181,18 +197,47 @@ fn Parser::parse_postfix(self : Parser) -> Ast raise JmesError {
       Dot => {
         ignore(self.advance())
         match self.current().kind {
-          Identifier(name) | QuotedIdentifier(name) => {
+          Identifier(name) => {
+            ignore(self.advance())
+            let suffix = if self.current().kind is LParen {
+              self.parse_function(name)
+            } else {
+              self.add_node(Field(name))
+            }
+            value = self.attach_projection(value, suffix)
+          }
+          QuotedIdentifier(name) => {
             ignore(self.advance())
             value = self.attach_projection(value, self.add_node(Field(name)))
           }
           Star => {
             ignore(self.advance())
-            value = self.add_node(
-              Projection(self.add_node(Values(value)), self.add_node(Identity)),
+            let suffix = self.add_node(
+              Projection(
+                self.add_node(Values(self.add_node(Identity))),
+                self.add_node(Identity),
+              ),
             )
+            value = self.attach_projection(value, suffix)
           }
           LBrace => {
             let suffix = self.parse_multi_hash()
+            value = self.attach_projection(value, suffix)
+          }
+          LBracket => {
+            if self.index + 1 < self.tokens.length() &&
+              self.tokens[self.index + 1].kind is Eof {
+              raise self.syntax(
+                "expected a field, wildcard, or object after '.'",
+              )
+            }
+            ignore(self.advance())
+            let suffix = if self.star_closes_bracket() {
+              self.index = self.index - 1
+              self.parse_bracket_suffix(self.add_node(Identity))
+            } else {
+              self.parse_multi_list_after_open()
+            }
             value = self.attach_projection(value, suffix)
           }
           _ =>
@@ -235,10 +280,17 @@ fn Parser::parse_primary(self : Parser) -> Ast raise JmesError {
     }
     LBracket =>
       match self.current().kind {
-        Number(_) | Colon | Star | RBracket | Question => {
+        Number(_) | Colon | RBracket | Question => {
           self.index = self.index - 1
           self.parse_bracket_suffix(self.add_node(Identity))
         }
+        Star =>
+          if self.star_closes_bracket() {
+            self.index = self.index - 1
+            self.parse_bracket_suffix(self.add_node(Identity))
+          } else {
+            self.parse_multi_list_after_open()
+          }
         _ => self.parse_multi_list_after_open()
       }
     LBrace => self.parse_multi_hash_after_open()
@@ -335,18 +387,33 @@ fn Parser::parse_bracket_suffix(
     Star => {
       ignore(self.advance())
       self.expect(RBracket)
-      self.add_node(Projection(base, self.add_node(Identity)))
+      self.attach_projection(
+        base,
+        self.add_node(
+          Projection(self.add_node(Identity), self.add_node(Identity)),
+        ),
+      )
     }
     Question => {
       ignore(self.advance())
       let predicate = self.parse_pipe()
       self.expect(RBracket)
-      self.add_node(
+      let suffix = self.add_node(
         Projection(
-          self.add_node(Filter(base, predicate)),
+          self.add_node(Filter(self.add_node(Identity), predicate)),
           self.add_node(Identity),
         ),
       )
+      if base.has_projection() {
+        self.attach_projection(base, suffix)
+      } else {
+        self.add_node(
+          Projection(
+            self.add_node(Filter(base, predicate)),
+            self.add_node(Identity),
+          ),
+        )
+      }
     }
     Number(index) => {
       ignore(self.advance())

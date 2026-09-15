@@ -128,9 +128,9 @@ fn evaluate_slice(
 
 ///|
 fn compare_values(operation : CompareOp, left : Json, right : Json) -> Json {
-  let outcome = match operation {
-    Equal => left == right
-    NotEqual => left != right
+  match operation {
+    Equal => Json::boolean(left == right)
+    NotEqual => Json::boolean(left != right)
     Less | LessOrEqual | Greater | GreaterOrEqual => {
       let ordering : Int? = match (left, right) {
         (Json::Number(a, ..), Json::Number(b, ..)) =>
@@ -139,19 +139,20 @@ fn compare_values(operation : CompareOp, left : Json, right : Json) -> Json {
         _ => None
       }
       match ordering {
-        None => false
+        None => Json::null()
         Some(ordering) =>
-          match operation {
-            Less => ordering < 0
-            LessOrEqual => ordering <= 0
-            Greater => ordering > 0
-            GreaterOrEqual => ordering >= 0
-            _ => false
-          }
+          Json::boolean(
+            match operation {
+              Less => ordering < 0
+              LessOrEqual => ordering <= 0
+              Greater => ordering > 0
+              GreaterOrEqual => ordering >= 0
+              _ => false
+            },
+          )
       }
     }
   }
-  Json::boolean(outcome)
 }
 
 ///|
@@ -208,7 +209,6 @@ fn evaluate(
           }
           Json::array(result)
         }
-        Json::Array(values) => Json::array(values.copy())
         _ => Json::null()
       }
     }
@@ -272,6 +272,9 @@ fn evaluate(
         evaluate(right, input, context, depth + 1),
       )
     MultiList(items) => {
+      if input is Json::Null {
+        return Json::null()
+      }
       let result : Array[Json] = []
       for item in items {
         result.push(evaluate(item, input, context, depth + 1))
@@ -279,6 +282,9 @@ fn evaluate(
       Json::array(result)
     }
     MultiHash(entries) => {
+      if input is Json::Null {
+        return Json::null()
+      }
       let result : Map[String, Json] = Map([])
       for entry in entries {
         let (key, value) = entry

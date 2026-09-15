@@ -6,7 +6,7 @@ fn cloud_inventory() -> Json raise {
     ),
   )
   @jmespath.search(
-    "reservations[].instances[][?state.name == 'running'].{id: id, type: type}",
+    "reservations[].instances[?state.name == 'running'][].{id: id, type: type}",
     input,
   )
 }

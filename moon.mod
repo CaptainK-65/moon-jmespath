@@ -13,3 +13,7 @@ keywords = [ "jmespath", "json", "query", "parser" ]
 description = "A reusable JMESPath 1.0 query engine for MoonBit"
 
 preferred_target = "wasm"
+
+import {
+  "moonbitlang/x@0.5.5",
+}
