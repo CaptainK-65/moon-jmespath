@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  MOONBIT_VERSION: latest
+
+jobs:
+  verify:
+    name: Format, check, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --fail --location https://cli.moonbitlang.com/install/unix.sh | bash -s -- "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Show toolchain
+        run: moon version --all
+
+      - name: Verify formatting
+        run: moon fmt --check
+
+      - name: Type-check every backend
+        run: moon check --target all --deny-warn
+
+      - name: Test every backend
+        run: moon test --target all --deny-warn
+
+      - name: Build release artifacts
+        run: moon build --target all --release
+
+      - name: Run CLI smoke test
+        run: >-
+          moon run cmd/moonjmes --
+          'people[?age >= `18`].name'
+          '{"people":[{"name":"Ada","age":36},{"name":"Lin","age":15}]}'
+
+      - name: Run scenario examples
+        run: |
+          moon run examples/cloud_inventory
+          moon run examples/config_audit
+          moon run examples/event_projection
+
