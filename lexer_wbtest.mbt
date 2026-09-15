@@ -12,7 +12,7 @@ test "lexer recognizes identifiers, operators and literals" {
       assert_true(tokens[10].kind is RawString("unknown"))
       assert_true(tokens[11].kind is Eof)
     }
-    Err(error) => fail("unexpected lexer error: \{error.message}")
+    Err(error) => fail("unexpected lexer error: \{error.message()}")
   }
 }
 
@@ -20,7 +20,7 @@ test "lexer recognizes identifiers, operators and literals" {
 test "lexer decodes quoted identifiers" {
   match lex("\"first\\nname\"", Limits::default()) {
     Ok(tokens) => assert_true(tokens[0].kind is QuotedIdentifier("first\nname"))
-    Err(error) => fail("unexpected lexer error: \{error.message}")
+    Err(error) => fail("unexpected lexer error: \{error.message()}")
   }
 }
 
@@ -28,8 +28,8 @@ test "lexer decodes quoted identifiers" {
 test "lexer reports malformed input with an offset" {
   match lex("foo.$", Limits::default()) {
     Err(error) => {
-      assert_eq(error.kind, Syntax)
-      assert_eq(error.offset, 4)
+      assert_eq(error.kind(), Syntax)
+      assert_eq(error.offset(), 4)
     }
     Ok(_) => fail("expected lexer error")
   }
