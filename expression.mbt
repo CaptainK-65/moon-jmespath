@@ -44,6 +44,7 @@ fn Expression::search_with_functions(
   let context : EvalContext = {
     limits: self.limits,
     custom_functions,
+    trace: None,
     steps: 0,
   }
   evaluate(self.ast, input, context, 0)

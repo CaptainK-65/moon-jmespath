@@ -72,3 +72,50 @@ declare pub fn Engine::clear_cache(self : Engine) -> Unit
 
 ///|
 declare pub fn Engine::stats(self : Engine) -> EngineStats
+
+///|
+/// Formal v0.2 inspection contracts. Implementations live in inspection.mbt.
+declare pub type PlanStats
+
+///|
+declare pub type QueryPlan
+
+///|
+declare pub fn Expression::ast_json(self : Expression) -> Json
+
+///|
+declare pub fn Expression::explain(self : Expression) -> QueryPlan
+
+///|
+declare pub fn QueryPlan::to_json(self : QueryPlan) -> Json
+
+///|
+/// Formal v0.2 trace contracts. Implementations live in trace.mbt.
+declare pub type TraceOptions
+
+///|
+declare pub type TraceEvent
+
+///|
+declare pub type TraceReport
+
+///|
+declare pub fn TraceOptions::default() -> TraceOptions
+
+///|
+declare pub fn Expression::trace(
+  self : Expression,
+  input : Json,
+  options? : TraceOptions,
+) -> TraceReport raise JmesError
+
+///|
+declare pub fn Engine::trace(
+  self : Engine,
+  source : String,
+  input : Json,
+  options? : TraceOptions,
+) -> TraceReport raise JmesError
+
+///|
+declare pub fn TraceReport::to_json(self : TraceReport) -> Json
