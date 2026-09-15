@@ -2,7 +2,7 @@
 
 ## JMESPath Python compliance data
 
-Selected test inputs, expressions, and expected results in
+The fixtures under `compliance/fixtures` and selected cases in
 `compliance_test.mbt` are adapted from the compliance data distributed with
 [`jmespath.py`](https://github.com/jmespath/jmespath.py). The implementation in
 this repository is original MoonBit code and does not copy the Python engine.

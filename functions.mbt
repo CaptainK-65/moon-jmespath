@@ -188,7 +188,7 @@ fn evaluate_by_function(
     evaluate(arguments[0], input, context, depth + 1),
   )
   if values.is_empty() {
-    return Json::null()
+    return if name == "sort_by" { Json::array([]) } else { Json::null() }
   }
   let expression = evaluate_expression_ref(name, arguments[1])
   let keyed : Array[(Json, Json)] = []

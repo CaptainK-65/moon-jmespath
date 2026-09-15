@@ -99,13 +99,19 @@ fn lex_raw_string(
   let mut i = start + 1
   while i < length {
     if source[i] == '\'' {
+      let mut slashes = 0
+      let mut before = i - 1
+      while before > start && source[before] == '\\' {
+        slashes = slashes + 1
+        before = before - 1
+      }
+      if slashes % 2 == 1 {
+        i = i + 1
+        continue
+      }
       let raw = slice_string(source, start + 1, i)
       let value = raw.replace_all(old="\\'", new="'")
       return Ok(({ kind: RawString(value), offset: start, }, i + 1))
-    }
-    if source[i] == '\\' && i + 1 < length && source[i + 1] == '\'' {
-      i = i + 2
-      continue
     }
     i = i + 1
   }
@@ -230,6 +236,21 @@ fn lex(source : String, limits : Limits) -> Result[Array[Token], JmesError] {
           continue
         }
         Err(error) => return Err(error)
+      }
+    }
+    if c == '?' && i > 0 && is_whitespace(source[i - 1]) {
+      let mut before = i - 1
+      while before > 0 && is_whitespace(source[before]) {
+        before = before - 1
+      }
+      if source[before] == '[' {
+        return Err(
+          JmesError::new(
+            Syntax,
+            "whitespace is not allowed between '[' and '?'",
+            i,
+          ),
+        )
       }
     }
     let token : TokenKind? = match c {
