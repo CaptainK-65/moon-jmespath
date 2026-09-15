@@ -8,6 +8,8 @@ import {
 // Values
 pub fn compile(String, limits? : Limits) -> Expression raise JmesError
 
+pub fn search(String, Json, limits? : Limits) -> Json raise JmesError
+
 // Errors
 pub(all) suberror JmesError {
   Fault(ErrorKind, String, Int)
@@ -35,6 +37,7 @@ pub struct Expression {
   ast : Ast
   limits : Limits
 }
+pub fn Expression::search(Self, Json) -> Json raise JmesError
 pub fn Expression::source(Self) -> String
 
 pub(all) struct Limits {
