@@ -1,9 +1,9 @@
 ///|
 /// A compiled and reusable JMESPath expression.
 pub struct Expression {
-  source : String
-  ast : Ast
-  limits : Limits
+  priv source : String
+  priv ast : Ast
+  priv limits : Limits
 }
 
 ///|
