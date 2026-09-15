@@ -1,6 +1,7 @@
 ///|
 priv struct EvalContext {
   limits : Limits
+  custom_functions : Map[String, RegisteredFunction]
   mut steps : Int
 }
 

@@ -32,7 +32,20 @@ pub fn Expression::search(
   self : Expression,
   input : Json,
 ) -> Json raise JmesError {
-  let context : EvalContext = { limits: self.limits, steps: 0, }
+  self.search_with_functions(input, Map([]))
+}
+
+///|
+fn Expression::search_with_functions(
+  self : Expression,
+  input : Json,
+  custom_functions : Map[String, RegisteredFunction],
+) -> Json raise JmesError {
+  let context : EvalContext = {
+    limits: self.limits,
+    custom_functions,
+    steps: 0,
+  }
   evaluate(self.ast, input, context, 0)
 }
 
