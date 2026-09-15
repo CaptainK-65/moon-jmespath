@@ -2,6 +2,7 @@
 priv struct EvalContext {
   limits : Limits
   custom_functions : Map[String, RegisteredFunction]
+  trace : TraceRecorder?
   mut steps : Int
 }
 
@@ -164,7 +165,7 @@ fn evaluate(
   depth : Int,
 ) -> Json raise JmesError {
   context.tick(depth)
-  match ast {
+  let result = match ast {
     Identity => input
     Field(name) => evaluate_field(input, name)
     Literal(value) => value
@@ -272,27 +273,27 @@ fn evaluate(
         evaluate(left, input, context, depth + 1),
         evaluate(right, input, context, depth + 1),
       )
-    MultiList(items) => {
+    MultiList(items) =>
       if input is Json::Null {
-        return Json::null()
+        Json::null()
+      } else {
+        let result : Array[Json] = []
+        for item in items {
+          result.push(evaluate(item, input, context, depth + 1))
+        }
+        Json::array(result)
       }
-      let result : Array[Json] = []
-      for item in items {
-        result.push(evaluate(item, input, context, depth + 1))
-      }
-      Json::array(result)
-    }
-    MultiHash(entries) => {
+    MultiHash(entries) =>
       if input is Json::Null {
-        return Json::null()
+        Json::null()
+      } else {
+        let result : Map[String, Json] = Map([])
+        for entry in entries {
+          let (key, value) = entry
+          result[key] = evaluate(value, input, context, depth + 1)
+        }
+        Json::object(result)
       }
-      let result : Map[String, Json] = Map([])
-      for entry in entries {
-        let (key, value) = entry
-        result[key] = evaluate(value, input, context, depth + 1)
-      }
-      Json::object(result)
-    }
     Function(name, arguments) =>
       evaluate_function(name, arguments, input, context, depth + 1)
     ExpressionRef(_) =>
@@ -302,4 +303,9 @@ fn evaluate(
         0,
       )
   }
+  match context.trace {
+    Some(recorder) => recorder.record(ast, input, result, depth)
+    None => ()
+  }
+  result
 }
