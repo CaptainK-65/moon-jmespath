@@ -14,6 +14,7 @@ pub fn search(String, Json, limits? : Limits) -> Json raise JmesError
 pub(all) suberror JmesError {
   Fault(ErrorKind, String, Int)
 } derive(Eq, @debug.Debug)
+pub fn JmesError::diagnostic(Self, String) -> Diagnostic
 pub fn JmesError::kind(Self) -> ErrorKind
 pub fn JmesError::message(Self) -> String
 pub fn JmesError::offset(Self) -> Int
@@ -22,6 +23,14 @@ pub fn JmesError::offset(Self) -> Int
 type Ast derive(Eq, @debug.Debug)
 
 type CompareOp derive(Eq, @debug.Debug)
+
+pub(all) struct Diagnostic {
+  kind : ErrorKind
+  message : String
+  span : SourceSpan
+  excerpt : String
+} derive(Eq, @debug.Debug)
+pub fn Diagnostic::to_json(Self) -> Json
 
 pub(all) enum ErrorKind {
   Syntax
@@ -33,9 +42,7 @@ pub(all) enum ErrorKind {
 } derive(Eq, @debug.Debug)
 
 pub struct Expression {
-  source : String
-  ast : Ast
-  limits : Limits
+  // private fields
 }
 pub fn Expression::search(Self, Json) -> Json raise JmesError
 pub fn Expression::source(Self) -> String
@@ -47,6 +54,13 @@ pub(all) struct Limits {
   max_steps : Int
 } derive(Eq, @debug.Debug)
 pub fn Limits::default() -> Self
+
+pub(all) struct SourceSpan {
+  start : Int
+  end : Int
+  line : Int
+  column : Int
+} derive(Eq, ToJson, @debug.Debug)
 
 type Token derive(Eq, @debug.Debug)
 
