@@ -1,0 +1,7 @@
+/_build/
+/.moon/
+*.wasm
+*.wat
+*.js
+*.exe
+
