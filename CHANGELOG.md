@@ -2,14 +2,20 @@
 
 All notable changes to MoonJMES are documented here.
 
-## 0.1.0 - Unreleased
+## 0.2.0 - 2026-09-16
 
-- Added source-aware tokenization for standard JMESPath syntax and literals.
-- Added a projection-aware expression parser and reusable `compile` API.
-- Added JSON evaluation for traversal, indexing, slices, projections, filters,
-  comparisons, boolean expressions, pipes, and multi-select expressions.
-- Added the standard JMESPath function registry and expression references.
-- Added structured errors and configurable resource limits.
-- Added selected MIT-attributed compliance cases, a CLI, three end-to-end
-  scenarios, and strict four-backend CI.
+- Expanded compliance to all 908 cases in the attributed upstream fixture
+  corpus, with no allowlist or expected failures.
+- Made compiled types opaque and added formal API contracts.
+- Added an LRU-cached engine, custom functions, batch isolation, and metrics.
+- Added diagnostics with spans, AST export, query plans, static analysis, and
+  bounded evaluation traces.
+- Added NDJSON processing, multi-stage pipelines, and named query catalogs.
+- Added a MoonBit-backed visual Playground and GitHub Pages deployment.
+- Added a 3,500-line production-source gate, coverage, benchmark, JavaScript,
+  browser, package, and release automation.
 
+## 0.1.0 - 2026-09-14
+
+- Added the lexer, parser, evaluator, standard functions, structured errors,
+  configurable limits, thin CLI, and three reusable scenarios.

@@ -1,23 +1,20 @@
-# v0.1.0 release checklist
+# v0.2.0 release checklist
 
-- [x] Public repository and OSI-approved root license
-- [x] MoonBit is the implementation language
-- [x] Reproducible README API example
-- [x] CLI smoke test and three runnable scenarios
-- [x] Structured syntax/evaluation errors
-- [x] Configurable resource limits with regression tests
-- [x] Selected specification-derived tests with license attribution
-- [x] `moon fmt --check`
-- [x] `moon check --target all --deny-warn`
-- [x] `moon test --target all --deny-warn`
-- [x] `moon build --target all --release`
-- [x] Generated public interface reviewed after `moon info`
-- [ ] Pull request CI green on GitHub
-- [ ] Maintainer review and merge to the default branch
-- [ ] Applicant rewrites and submits the one-page proposal
-- [ ] Publish `CaptainK-65/jmespath@0.1.0` to mooncakes.io
-- [ ] Create signed Git tag and GitHub release
+- [x] Reusable opaque API and formal contract declarations
+- [x] 908-case attributed compliance corpus with zero expected failures
+- [x] Cached/extensible engine, batch isolation, and runtime metrics
+- [x] Structured diagnostics, AST export, analysis, plans, and traces
+- [x] NDJSON, query pipeline, and named catalog utilities
+- [x] Visual Playground backed by the MoonBit implementation
+- [x] At least 3,500 physical lines of production MoonBit source
+- [x] Four-backend format, check, test, and release-build gates
+- [x] Coverage reporting and Wasm benchmark baselines
+- [x] JavaScript export and headless-browser regression checks
+- [x] Reproducible package, Playground, Pages, and tag-release workflows
+- [ ] Pull request CI green and merged to `main`
+- [ ] GitHub Pages deployment healthy
+- [ ] `v0.2.0` tag and GitHub Release published
+- [ ] Publish `CaptainK-65/jmespath@0.2.0` to mooncakes.io
 
-Publishing and contest-form submission require the repository owner's account
-authorization and are intentionally left for the maintainer.
-
+The final mooncakes.io publication requires the repository owner's registry
+credentials. All earlier checks are automated without maintainer secrets.

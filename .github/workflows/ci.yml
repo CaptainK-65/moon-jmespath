@@ -13,12 +13,12 @@ env:
 
 jobs:
   verify:
-    name: Format, check, test and build
+    name: Library quality gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install MoonBit
         shell: bash
@@ -35,11 +35,20 @@ jobs:
       - name: Verify formatting
         run: moon fmt --check
 
+      - name: Enforce 3,500-line production source gate
+        run: moon run tools/check_source_gate.mbtx -- 3500
+
       - name: Type-check every backend
         run: moon check --target all --deny-warn
 
       - name: Test every backend
         run: moon test --target all --deny-warn
+
+      - name: Run 908-case upstream compliance gate
+        run: moon test full_compliance_test.mbt --target wasm --deny-warn
+
+      - name: Report library coverage
+        run: moon coverage analyze -p CaptainK-65/jmespath -- -f summary
 
       - name: Build release artifacts
         run: moon build --target all --release
@@ -55,4 +64,70 @@ jobs:
           moon run examples/cloud_inventory
           moon run examples/config_audit
           moon run examples/event_projection
+
+  benchmark:
+    name: Wasm benchmark baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --fail --location https://cli.moonbitlang.com/install/unix.sh | bash -s -- "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Update MoonBit registry
+        run: moon update
+
+      - name: Run reproducible Wasm benchmarks
+        run: moon bench --target wasm --release -p CaptainK-65/jmespath/benchmarks
+
+  playground:
+    name: Playground JS and browser contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --fail --location https://cli.moonbitlang.com/install/unix.sh | bash -s -- "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Update MoonBit registry
+        run: moon update
+
+      - name: Build and assemble Playground
+        run: |
+          moon build playground/app --target js --release
+          moon run tools/assemble_playground.mbtx _build/js/release/build/playground/app/app.js playground/dist
+
+      - name: Verify JavaScript export contract
+        shell: bash
+        run: |
+          node <<'NODE'
+          require('./playground/dist/moon-jmes.js');
+          const response = JSON.parse(globalThis.MoonJMES.run('people[*].name', '{"people":[{"name":"Ada"},{"name":"Moon"}]}'));
+          if (!response.ok || JSON.stringify(response.result) !== '["Ada","Moon"]' || response.trace.total_steps < 1) process.exit(1);
+          console.log(`js_export_contract=pass trace_steps=${response.trace.total_steps}`);
+          NODE
+
+      - name: Verify headless browser integration
+        shell: bash
+        run: |
+          page="file://${GITHUB_WORKSPACE}/playground/dist/index.html?smoke=1"
+          google-chrome --headless --no-sandbox --disable-gpu --allow-file-access-from-files --virtual-time-budget=3000 --dump-dom "$page" > browser-dom.html
+          grep 'data-smoke="pass"' browser-dom.html
+
+      - name: Upload reproducible Playground bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonjmes-playground
+          path: playground/dist
+          if-no-files-found: error
 

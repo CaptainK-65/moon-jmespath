@@ -1,0 +1,59 @@
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/x/fs",
+}
+
+///|
+fn ignored_directory(name : String) -> Bool {
+  name == ".git" || name == ".moon" || name == ".mooncakes" ||
+  name == "_build" || name == "target" || name == "node_modules"
+}
+
+///|
+fn production_source(name : String) -> Bool {
+  name.has_suffix(".mbt") && !name.has_suffix("_test.mbt") &&
+  !name.has_suffix("_wbtest.mbt") && !name.has_prefix("generated_")
+}
+
+///|
+fn physical_lines(path : String) -> Int raise {
+  let content = @fs.read_file_to_string(path)
+  if content.is_empty() {
+    0
+  } else {
+    let count = content.split("\n").length()
+    if content.has_suffix("\n") { count - 1 } else { count }
+  }
+}
+
+///|
+fn count_directory(path : String) -> Int raise {
+  let mut total = 0
+  for name in @fs.read_dir(path) {
+    let child = if path == "." { name } else { path + "/" + name }
+    if @fs.is_dir(child) {
+      if !ignored_directory(name) {
+        total = total + count_directory(child)
+      }
+    } else if production_source(name) {
+      total = total + physical_lines(child)
+    }
+  }
+  total
+}
+
+///|
+fn main raise {
+  let args = @env.args()
+  let minimum = if args.length() == 2 {
+    @string.parse_int(args[1])
+  } else {
+    3500
+  }
+  let total = count_directory(".")
+  println("production_moonbit_lines=\{total} minimum=\{minimum}")
+  if total < minimum {
+    abort("production MoonBit source gate failed")
+  }
+}

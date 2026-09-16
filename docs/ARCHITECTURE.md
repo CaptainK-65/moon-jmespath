@@ -1,45 +1,49 @@
 # Architecture
 
-MoonJMES keeps the public API small and separates four responsibilities inside
-one MoonBit package:
+MoonJMES separates reusable query semantics from consumers and presentation.
 
-1. `lexer.mbt` converts UTF-16 source text into source-aware tokens and decodes
-   quoted identifiers, raw strings, and JSON literals.
-2. `parser.mbt` applies precedence rules and creates a projection-aware AST.
-   Projection transforms are extended when a suffix follows `[*]`, `[]`, or a
-   filter, preserving JMESPath's element-wise semantics.
-3. `evaluator.mbt` walks standard MoonBit `Json` values. It owns truthiness,
-   indexing, slicing, comparison, flattening, projection, and resource-budget
-   accounting.
-4. `functions.mbt` owns arity/type validation and the standard function
-   registry, including expression-reference functions such as `map` and
-   `sort_by`.
+1. `lexer.mbt` records source offsets and decodes identifiers, raw strings, and
+   JSON literals. `parser.mbt` builds the private projection-aware AST.
+2. `evaluator.mbt` implements traversal, truthiness, projections, comparison,
+   resource accounting, and dispatch into `functions.mbt`.
+3. `expression.mbt` exposes the opaque compiled-expression boundary. `api.mbt`
+   defines public limits and structured error values; `diagnostic.mbt` converts
+   offsets into line/column spans and excerpts.
+4. `engine.mbt` adds LRU compilation caching, custom functions, isolated batch
+   evaluation, and metrics without expanding the core expression type.
+5. `inspection.mbt`, `analysis.mbt`, and `trace.mbt` provide JSON AST export,
+   query plans, static inventories/findings, and bounded post-order traces.
+6. `ndjson.mbt`, `pipeline.mbt`, and `catalog.mbt` provide reusable data-tooling
+   primitives above the same compiler and evaluator.
+7. `playground/model` converts all results into a stable JSON response.
+   `playground/app` is the thin JS export boundary, while `playground/site`
+   contains presentation-only HTML, CSS, and JavaScript.
 
-`expression.mbt` is the public facade. `compile` performs lexing and parsing
-once; `Expression::search` may then reuse the AST across multiple JSON values.
-The one-shot `search` helper composes those calls.
+The core package performs no file, network, process, clock, DOM, or database
+I/O. It imports only MoonBit core packages, so one implementation is checked
+and tested on Wasm, Wasm GC, JavaScript, and Native. Tooling that needs file I/O
+lives in standalone `.mbtx` scripts and is not part of the published library.
 
-## Error boundary
+## Public boundaries
 
-All public failures use `JmesError::Fault(ErrorKind, String, Int)`. Syntax
-errors carry their UTF-16 source offset. Data-only errors use offset zero.
-Callers can branch on `ErrorKind` without parsing human-readable text.
+`Expression`, `Engine`, `Pipeline`, and `QueryCatalog` are opaque. Callers use
+constructors and methods rather than depending on storage layout. The formal
+declarations in `v2_contract.mbt` and compile-time contract tests protect this
+surface from accidental drift.
 
-## Resource boundary
+## Safety boundaries
 
-`Limits` provides four independent safeguards:
+- `Limits` bounds parser and evaluator work.
+- `TraceOptions` bounds event count and preview size.
+- `Engine` bounds cache capacity and validates custom function names/arities.
+- NDJSON processing reports failures with one-based line numbers and can either
+  continue or stop early.
+- Batch and catalog operations preserve per-item failures instead of discarding
+  successful results.
 
-- `max_expression_length` is checked before tokenization;
-- `max_ast_nodes` is checked as nodes are constructed;
-- `max_depth` is checked on evaluator recursion;
-- `max_steps` bounds total evaluator node visits.
+## Release boundaries
 
-The default values are finite. Callers handling untrusted expressions may pass
-stricter limits without changing query semantics.
-
-## Portability
-
-The core library only imports `moonbitlang/core/json`. It performs no file,
-network, process, clock, or platform-specific I/O, so the same implementation
-is checked and tested on Wasm, Wasm GC, JavaScript, and Native.
-
+Generated compliance data, compiler output, packaged archives, and assembled
+Playground files are reproducible but not treated as production source. CI
+enforces at least 3,500 physical lines of non-test, non-generated MoonBit source
+and rebuilds every release artifact from a clean checkout.

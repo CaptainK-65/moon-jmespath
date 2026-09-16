@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  MOONBIT_VERSION: latest
+
+jobs:
+  publish:
+    name: Verify and publish release assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --fail --location https://cli.moonbitlang.com/install/unix.sh | bash -s -- "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Verify tagged source
+        run: |
+          moon update
+          moon fmt --check
+          moon run tools/check_source_gate.mbtx -- 3500
+          moon check --target all --deny-warn
+          moon test --target all --deny-warn
+          moon build --target all --release
+
+      - name: Build release archives
+        shell: bash
+        run: |
+          moon package
+          moon build playground/app --target js --release
+          moon run tools/assemble_playground.mbtx _build/js/release/build/playground/app/app.js playground/dist
+          cd playground/dist
+          zip -r ../../_build/publish/moonjmes-playground-${GITHUB_REF_NAME}.zip .
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          _build/publish/CaptainK-65-jmespath-0.2.0.zip
+          _build/publish/moonjmes-playground-${GITHUB_REF_NAME}.zip
+          --title "MoonJMES ${GITHUB_REF_NAME}"
+          --notes-file docs/RELEASE_NOTES_v0.2.0.md
+          --verify-tag

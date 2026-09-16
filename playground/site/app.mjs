@@ -241,6 +241,26 @@ function runQuery() {
   });
 }
 
+function runBrowserSmoke() {
+  if (new URLSearchParams(location.search).get("smoke") !== "1") return;
+  const finish = () => {
+    if (!setRuntimeReady()) {
+      setTimeout(finish, 25);
+      return;
+    }
+    try {
+      const response = JSON.parse(globalThis.MoonJMES.run(elements.query.value, elements.json.value));
+      document.body.dataset.smoke = response.ok && response.plan?.stats?.nodes > 0 && response.trace?.total_steps > 0
+        ? "pass"
+        : "fail";
+    } catch (error) {
+      document.body.dataset.smoke = "fail";
+      document.body.dataset.smokeError = error instanceof Error ? error.message : String(error);
+    }
+  };
+  finish();
+}
+
 function activateTab(name) {
   document.querySelectorAll(".tab").forEach(tab => {
     const active = tab.dataset.tab === name;
@@ -276,3 +296,4 @@ globalThis.addEventListener("moonjmes:ready", setRuntimeReady);
 
 loadExample(0);
 setRuntimeReady();
+runBrowserSmoke();
