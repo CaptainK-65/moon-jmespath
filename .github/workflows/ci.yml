@@ -83,7 +83,7 @@ jobs:
         run: moon update
 
       - name: Run reproducible Wasm benchmarks
-        run: moon bench --target wasm --release -p CaptainK-65/jmespath
+        run: moon bench --target wasm --release -p CaptainK-65/jmespath/benchmarks
 
   playground:
     name: Playground JS and browser contract

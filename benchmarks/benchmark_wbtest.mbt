@@ -1,12 +1,12 @@
 ///|
 test "bench compile representative expression" (b : @bench.T) {
   let source = "people[?active && score >= `80`].{name: name, score: score} | sort_by(@, &score)"
-  b.bench(fn() { b.keep(try! compile(source)) })
+  b.bench(fn() { b.keep(try! @jmespath.compile(source)) })
 }
 
 ///|
 test "bench expression analysis" (b : @bench.T) {
-  let expression = try! compile(
+  let expression = try! @jmespath.compile(
     "people[?active && score >= `80`].{name: name, tags: tags}",
   )
   b.bench(fn() {
@@ -20,7 +20,9 @@ test "bench compile transformation pipeline" (b : @bench.T) {
   let stages = [
     "people[?active]", "[].{name: name, score: score}", "sort_by(@, &score)",
   ]
-  b.bench(fn() { b.keep((try! compile_pipeline(stages)).stats().total_nodes) })
+  b.bench(fn() {
+    b.keep((try! @jmespath.compile_pipeline(stages)).stats().total_nodes)
+  })
 }
 
 ///|
@@ -36,7 +38,9 @@ test "bench NDJSON batch" (b : @bench.T) {
     #|{"name":"Tao","score":86}
   b.bench(fn() {
     b.keep(
-      (try! search_ndjson("{name: name, passed: score >= `80`}", input)).succeeded,
+      (try! @jmespath.search_ndjson(
+        "{name: name, passed: score >= `80`}", input,
+      )).succeeded,
     )
   })
 }

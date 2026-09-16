@@ -83,7 +83,7 @@ moon run tools/check_source_gate.mbtx -- 3500
 moon check --target all --deny-warn
 moon test --target all --deny-warn
 moon coverage analyze -p CaptainK-65/jmespath -- -f summary
-moon bench --target wasm --release -p CaptainK-65/jmespath
+moon bench --target wasm --release -p CaptainK-65/jmespath/benchmarks
 moon build --target all --release
 moon package
 ```
