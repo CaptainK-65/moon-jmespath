@@ -12,7 +12,7 @@ source tree.
 | AST and trace diagnostics | [#15](https://github.com/CaptainK-65/moon-jmespath/issues/15) | [#22](https://github.com/CaptainK-65/moon-jmespath/pull/22) | [34957958132](https://github.com/CaptainK-65/moon-jmespath/actions/runs/34957958132) |
 | Visual Playground | [#16](https://github.com/CaptainK-65/moon-jmespath/issues/16) | [#23](https://github.com/CaptainK-65/moon-jmespath/pull/23) | [34958948704](https://github.com/CaptainK-65/moon-jmespath/actions/runs/34958948704) |
 | Analysis and data utilities | [#24](https://github.com/CaptainK-65/moon-jmespath/issues/24) | [#25](https://github.com/CaptainK-65/moon-jmespath/pull/25) | [34960199428](https://github.com/CaptainK-65/moon-jmespath/actions/runs/34960199428) |
-| CI, browser, benchmarks, Pages, and release | [#17](https://github.com/CaptainK-65/moon-jmespath/issues/17) | populated by the release PR | populated after CI |
+| CI, browser, benchmarks, Pages, and release | [#17](https://github.com/CaptainK-65/moon-jmespath/issues/17) | [#26](https://github.com/CaptainK-65/moon-jmespath/pull/26) | [35042823682](https://github.com/CaptainK-65/moon-jmespath/actions/runs/35042823682) |
 
 The final tracker comment adds the successful main/Pages/tag workflow URLs and
 the GitHub Release URL after publication.
