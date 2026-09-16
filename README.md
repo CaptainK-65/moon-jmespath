@@ -25,8 +25,7 @@
 
 ---
 
-## Built as infrastructure, not a product silo
-
+## Built as infrastructure
 MoonJMES provides a compact query language boundary for any MoonBit application
 that works with JSON. The core stays independent from browsers, databases, and
 product-specific schemas; the CLI, data utilities, and visual Playground are
