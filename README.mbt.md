@@ -1,122 +1,102 @@
 # MoonJMES
 
 [![CI](https://github.com/CaptainK-65/moon-jmespath/actions/workflows/ci.yml/badge.svg)](https://github.com/CaptainK-65/moon-jmespath/actions/workflows/ci.yml)
+[![Pages](https://github.com/CaptainK-65/moon-jmespath/actions/workflows/pages.yml/badge.svg)](https://github.com/CaptainK-65/moon-jmespath/actions/workflows/pages.yml)
 
-MoonJMES is a reusable JSON query library written in MoonBit. It compiles
-[JMESPath 1.0](https://jmespath.org/specification.html) expressions into an
-internal AST and evaluates them against MoonBit's standard `Json` type. The
-engine has no dependency on a web UI, database, or product-specific data model.
+MoonJMES is a reusable JMESPath 1.0 query toolkit written in MoonBit. It
+provides a portable core library, an extensible cached engine, data-processing
+utilities, diagnostics, and a static visual Playground without coupling the
+library to a product-specific data model.
 
-Version 0.1.0 implements the language core and standard function set. Its
-conformance suite is intentionally reported as a selected, attributed subset;
-full upstream-suite conformance remains future work.
-
-## Why a library?
-
-Applications often need to select, filter, flatten, and reshape JSON returned
-by APIs or configuration files. Reimplementing those operations as ad hoc
-loops couples query policy to the application. MoonJMES provides a compiled
-query boundary that can be reused by command-line tools, services, tests, and
-MoonBit applications on all four MoonBit backends.
+Try the [MoonJMES Playground](https://captaink-65.github.io/moon-jmespath/) or
+use the library on the Wasm, Wasm GC, JavaScript, and Native backends.
 
 ## Quick start
 
-After the package is published to mooncakes.io, add it with:
+After publication to mooncakes.io, add the package with:
 
 ```shell
 moon add CaptainK-65/jmespath
 ```
 
-The public API supports one-shot search and reusable compiled expressions:
+Compile once and evaluate repeatedly:
 
 ```mbt check
 ///|
-test "query JSON with a reusable compiled expression" {
+test "query JSON with a reusable expression" {
   let input = try! @json.parse(
-    (
-      #|{"people":[{"name":"Ada","age":36},{"name":"Lin","age":15}]}
-    ),
+    "{\"people\":[{\"name\":\"Ada\",\"age\":36},{\"name\":\"Lin\",\"age\":15}]}",
   )
   let expression = try! @jmespath.compile("people[?age >= `18`].name")
   json_inspect(try! expression.search(input), content=["Ada"])
 }
 ```
 
-Every compile or evaluation failure is a catchable `JmesError::Fault` carrying
-an `ErrorKind`, diagnostic message, and source offset. Optional `Limits`
-protect callers from excessive expression size, AST growth, recursion depth,
-and evaluation work.
+All public failures are catchable `JmesError` values. `Limits` independently
+bounds expression length, AST size, evaluation depth, and evaluation steps.
 
-## Supported v0.1.0 surface
+## Reusable library surface
 
-- field and quoted-identifier access, current node, literals, and parentheses;
-- array indices, positive/negative slices, wildcards, flattening, and object
-  values;
-- list/object projections, filter projections, multi-select lists and objects;
-- pipe, comparison, boolean AND/OR/NOT, and expression references;
-- standard functions: `abs`, `avg`, `contains`, `ceil`, `ends_with`, `floor`,
-  `join`, `keys`, `length`, `map`, `max`, `max_by`, `merge`, `min`, `min_by`,
-  `not_null`, `reverse`, `sort`, `sort_by`, `starts_with`, `sum`, `to_array`,
-  `to_number`, `to_string`, `type`, and `values`;
-- the `wasm`, `wasm-gc`, `js`, and `native` targets.
+- JMESPath traversal, slicing, wildcards, flattening, projections, filters,
+  comparisons, boolean expressions, pipes, expression references, multi-select
+  expressions, and the standard function set.
+- `Engine` with bounded LRU compilation caching, custom-function registration,
+  isolated batch results, runtime statistics, and trace evaluation.
+- Opaque compiled expressions and pipelines, structured diagnostics with source
+  spans, JSON AST export, query plans, static analysis, and bounded traces.
+- Compile-once NDJSON processing, named query catalogs, and multi-stage query
+  pipelines with intermediate results.
+- Full attributed `jmespath.py` fixture corpus: 908 generated compliance cases
+  across 16 fixture files, with no allowlist or expected failures.
+- A browser Playground that displays results, diagnostics, query-plan metrics,
+  AST structure, and a step-by-step trace.
 
-Current non-goals are custom function registration, streaming JSON, a web UI,
-and a database adapter.
+## Engine example
 
-## CLI
+```mbt check
+///|
+test "reuse an engine cache" {
+  let engine = try! @jmespath.Engine::new(cache_capacity=64)
+  let input = try! @json.parse("{\"values\":[3,1,2]}")
+  json_inspect(try! engine.search("sort(values)", input), content=[1, 2, 3])
+  inspect(engine.stats().cache_hits, content="0")
+  ignore(try! engine.search("sort(values)", input))
+  inspect(engine.stats().cache_hits, content="1")
+}
+```
 
-The repository includes a deliberately thin CLI consumer:
+## CLI and scenarios
 
 ```shell
 moon run cmd/moonjmes -- 'people[*].name' '{"people":[{"name":"Ada"},{"name":"Moon"}]}'
-```
-
-Expected output:
-
-```json
-["Ada","Moon"]
-```
-
-## Reproducible scenarios
-
-Three complete consumers demonstrate ecosystem reuse rather than a single
-product flow:
-
-```shell
 moon run examples/cloud_inventory
 moon run examples/config_audit
 moon run examples/event_projection
 ```
 
-They cover nested cloud-resource flattening, configuration policy filtering,
-and event record projection. Each scenario has its own regression test.
-
-## Development and verification
-
-MoonBit `0.1.20260827` or newer is recommended for the current source tree.
+## Verification
 
 ```shell
+moon update
 moon fmt --check
+moon run tools/check_source_gate.mbtx -- 3500
 moon check --target all --deny-warn
 moon test --target all --deny-warn
+moon coverage analyze -p CaptainK-65/jmespath -- -f summary
+moon bench --target wasm --release -p CaptainK-65/jmespath
 moon build --target all --release
-moon info
+moon package
 ```
 
-CI runs the same strict checks, a CLI smoke test, and all three examples. See
-[`docs/COMPLIANCE.md`](docs/COMPLIANCE.md) for the exact compliance-test policy
-and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for fixture provenance.
+CI additionally validates the 908-case corpus explicitly, the JavaScript
+export contract, a real headless-browser execution, and the assembled Pages
+artifact. Generated JavaScript and static bundles remain untracked.
 
-## Architecture
-
-The lexer records source offsets, the Pratt-style parser builds a
-projection-aware AST, and the evaluator applies explicit resource limits while
-walking standard MoonBit `Json` values. Function dispatch is isolated from
-syntax parsing, so adding a function cannot silently change grammar rules. See
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for component boundaries.
+See [architecture](docs/ARCHITECTURE.md), [compliance](docs/COMPLIANCE.md),
+[benchmarks](docs/BENCHMARKS.md), and [release evidence](docs/RELEASE_EVIDENCE.md)
+for reproducible details.
 
 ## License
 
-MoonJMES is licensed under Apache-2.0. Selected compliance data is available
-under its upstream MIT license, reproduced in the third-party notices.
-
+MoonJMES is Apache-2.0 licensed. The MIT-licensed compliance data is attributed
+in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
